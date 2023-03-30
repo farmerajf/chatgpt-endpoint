@@ -3,7 +3,7 @@ const { Configuration, OpenAIApi } = require("openai");
 const express = require('express');
 
 const app = express();
-app.use(express.text());
+app.use(express.json());
 
 // Check for OpenAI API key
 if (process.env.OPENAI_API_KEY === "") {
@@ -43,7 +43,8 @@ async function getResponse(message) {
 }
 
 app.post('/', async (req, res) => {
-  console.log("Got: " + req.body)
+  let { prompt } = req.body;
+  console.log("Got: " + prompt)
   try {
     // Get Auth header from request
     const authHeader = req.headers.authorization;
@@ -54,7 +55,7 @@ app.post('/', async (req, res) => {
       return;
     }
 
-    const result = await getResponse(req.body);
+    const result = await getResponse(prompt);
     console.log("Response: " + result.data.choices[0].text)
     res.send(result.data.choices[0].text);
   } catch (error) {
