@@ -48,7 +48,7 @@ app.post('/', async (req, res) => {
     // Get Auth header from request
     const authHeader = req.headers.authorization;
     // Check if Auth header is valid
-    if (authHeader === undefined || authHeader !== process.env.INTERNAL_API_KEY) {
+    if (authHeader === undefined || authHeader !== "Bearer " + process.env.INTERNAL_API_KEY) {
       console.log("Unauthorized request");
       res.status(401).send("Unauthorized");
       return;
