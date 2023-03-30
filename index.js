@@ -6,13 +6,13 @@ const app = express();
 app.use(express.text());
 
 // Check for OpenAI API key
-if (process.env.OPENAI_API_KEY === undefined) {
+if (process.env.OPENAI_API_KEY === "") {
   console.log("Please set the OPENAI_API_KEY environment variable.");
   process.exit(1);
 }
 
 // Check for internal API key
-if (process.env.INTERNAL_API_KEY === undefined) {
+if (process.env.INTERNAL_API_KEY === "") {
   console.log("Please set the INTERNAL_API_KEY environment variable.");
   process.exit(1);
 }
@@ -45,6 +45,15 @@ async function getResponse(message) {
 app.post('/', async (req, res) => {
   console.log("Got: " + req.body)
   try {
+    // Get Auth header from request
+    const authHeader = req.headers.authorization;
+    // Check if Auth header is valid
+    if (authHeader === undefined || authHeader !== process.env.INTERNAL_API_KEY) {
+      console.log("Unauthorized request");
+      res.status(401).send("Unauthorized");
+      return;
+    }
+
     const result = await getResponse(req.body);
     console.log("Response: " + result.data.choices[0].text)
     res.send(result.data.choices[0].text);
@@ -53,6 +62,6 @@ app.post('/', async (req, res) => {
   }
 });
 
-// app.listen(process.env.PORT, () => {
-//   console.log("Server listening on port " + process.env.PORT);
-// });
+app.listen(process.env.PORT, () => {
+  console.log("Server listening on port " + process.env.PORT);
+});
