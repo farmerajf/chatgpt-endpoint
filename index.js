@@ -5,6 +5,8 @@ const express = require('express');
 const app = express();
 app.use(express.json());
 
+var conversation = "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.\n"
+
 // Check for OpenAI API key
 if (process.env.OPENAI_API_KEY === "") {
   console.log("Please set the OPENAI_API_KEY environment variable.");
@@ -30,6 +32,15 @@ async function getResponse(message) {
   });
   const openai = new OpenAIApi(configuration);
 
+  // const response = await openai.createChatCompletion({model: "gpt-3.5-turbo",
+  // prompt: message,
+  // temperature: 0,
+  // max_tokens: 256,
+  // top_p: 1,
+  // frequency_penalty: 0.0,
+  // presence_penalty: 0.0});   
+
+
   const response = await openai.createCompletion({
     model: "text-davinci-003",
     prompt: message,
@@ -38,6 +49,7 @@ async function getResponse(message) {
     top_p: 1,
     frequency_penalty: 0.0,
     presence_penalty: 0.0,
+
   });
   return response;
 }
@@ -45,6 +57,10 @@ async function getResponse(message) {
 app.post('/', async (req, res) => {
   let { prompt } = req.body;
   console.log("Got: " + prompt)
+
+  conversation += prompt + "\n";
+  console.log("Conversation: " + conversation);
+
   try {
     // Get Auth header from request
     const authHeader = req.headers.authorization;
@@ -55,8 +71,9 @@ app.post('/', async (req, res) => {
       return;
     }
 
-    const result = await getResponse(prompt);
-    console.log("Response: " + result.data.choices[0].text)
+    const result = await getResponse(conversation);
+    conversation += result.data.choices[0].text + "\n\n";
+    console.log("Conversation: " + conversation)
     res.send(result.data.choices[0].text);
   } catch (error) {
     console.log("Error: " + error)
