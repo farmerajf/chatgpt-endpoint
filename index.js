@@ -1,3 +1,4 @@
+const fs = require('fs');
 require('dotenv').config();
 const { Configuration, OpenAIApi } = require("openai");
 const express = require('express');
@@ -5,7 +6,22 @@ const express = require('express');
 const app = express();
 app.use(express.json());
 
-var conversation = "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.\n"
+var conversationFilePath = "./conversation.txt";
+
+// Default prompt
+var defaultPrompt = "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.\n"
+// Conversation max lines
+var conversationMaxLines = 200;
+
+
+// Check is a file exists
+if (!fs.existsSync(conversationFilePath)) {
+  //If the file does not exist, create it
+  fs.writeFileSync(conversationFilePath, defaultPrompt);
+}
+
+// Read the contents of the file
+var conversation = fs.readFileSync(conversationFilePath, 'utf8');
 
 // Check for OpenAI API key
 if (process.env.OPENAI_API_KEY === "") {
@@ -31,24 +47,14 @@ async function getResponse(message) {
     apiKey: process.env.OPENAI_API_KEY,
   });
   const openai = new OpenAIApi(configuration);
-
-  // const response = await openai.createChatCompletion({model: "gpt-3.5-turbo",
-  // prompt: message,
-  // temperature: 0,
-  // max_tokens: 256,
-  // top_p: 1,
-  // frequency_penalty: 0.0,
-  // presence_penalty: 0.0});   
-
-
   const response = await openai.createCompletion({
     model: "text-davinci-003",
     prompt: message,
-    temperature: 0,
-    max_tokens: 256,
+    temperature: 0.9,
+    max_tokens: 150,
     top_p: 1,
     frequency_penalty: 0.0,
-    presence_penalty: 0.0,
+    presence_penalty: 0.6,
 
   });
   return response;
@@ -56,10 +62,12 @@ async function getResponse(message) {
 
 app.post('/', async (req, res) => {
   let { prompt } = req.body;
-  console.log("Got: " + prompt)
 
+  //Trim the prompt
+  prompt = prompt.trim();
+
+  // Add the prompt to the conversation
   conversation += prompt + "\n";
-  console.log("Conversation: " + conversation);
 
   try {
     // Get Auth header from request
@@ -72,9 +80,27 @@ app.post('/', async (req, res) => {
     }
 
     const result = await getResponse(conversation);
-    conversation += result.data.choices[0].text + "\n\n";
-    console.log("Conversation: " + conversation)
+    
+    var response = result.data.choices[0].text;
+    // Trim the response
+    response = response.trim();
+
+    // Add the response to the conversation
+    conversation += response + "\n";
+
+    console.log("Conversation: " + conversation + "\n\n")
     res.send(result.data.choices[0].text);
+
+    // Check if the conversation is too long
+    if (conversation.split("\n").length > conversationMaxLines) {
+      // If the conversation is too long, remove the second and third line but keeping the first line
+      var lines = conversation.split("\n");
+      conversation = lines[0] + "\n";
+      conversation += lines.slice(3).join("\n");
+    }
+
+    // Write the conversation to the file
+    fs.writeFileSync(conversationFilePath, conversation);
   } catch (error) {
     console.log("Error: " + error)
   }
