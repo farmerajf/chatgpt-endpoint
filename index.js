@@ -9,9 +9,9 @@ app.use(express.json());
 var conversationFilePath = "./conversation.txt";
 
 // Default prompt
-var defaultPrompt = "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.\n"
+var defaultPrompt = "The following is a conversation with an AI assistant. The assistant is helpful, funny, creative, clever, and very friendly, almost like a best friend.\n"
 // Conversation max lines
-var conversationMaxLines = 1000;
+var conversationMaxLines = 100;
 
 
 // Check is a file exists
